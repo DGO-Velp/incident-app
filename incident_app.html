@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Management DGO</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      color: #2c2c2a;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      background: white;
+      min-height: 100vh;
+    }
+    .header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 1rem;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      font-size: 14px;
+      color: #666;
+    }
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .tab-btn {
+      padding: 0.75rem 1rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: #0066cc;
+      border-bottom-color: #0066cc;
+      font-weight: 500;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .form {
+      background: #f9f9f9;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #2c2c2a;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 0.75rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #2c2c2a;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+    .form-group textarea {
+      grid-column: 1 / -1;
+      min-height: 100px;
+      resize: vertical;
+    }
+    .btn {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #0052a3;
+    }
+    .btn-danger {
+      background: none;
+      color: #d32f2f;
+      border: 1px solid #d32f2f;
+    }
+    .btn-danger:hover {
+      background: rgba(211, 47, 47, 0.05);
+    }
+    .search-box {
+      margin-bottom: 1.5rem;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .incident-card {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+    .incident-header {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 600;
+      background: #e3f2fd;
+      color: #0066cc;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+    .incident-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c2c2a;
+    }
+    .incident-room {
+      font-size: 12px;
+      color: #999;
+    }
+    .incident-desc {
+      font-size: 13px;
+      color: #666;
+      margin: 0.5rem 0;
+    }
+    .incident-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 12px;
+      color: #999;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #999;
+    }
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Incident management DGO</h1>
+      <p id="count">0 incidenten</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('form')">➕ Nieuw incident</button>
+      <button class="tab-btn" onclick="switchTab('list')">📋 Overzicht</button>
+    </div>
+
+    <!-- FORM TAB -->
+    <div id="form" class="tab-content active">
+      <form class="form" onsubmit="handleSubmit(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>V-nummer *</label>
+            <input type="text" id="vnummer" placeholder="V-000001" required>
+          </div>
+          <div class="form-group">
+            <label>Naam bewoner *</label>
+            <input type="text" id="naam" placeholder="Jan Janssen" required>
+          </div>
+          <div class="form-group">
+            <label>Kamernummer</label>
+            <input type="text" id="kamer" placeholder="KA01">
+          </div>
+          <div class="form-group">
+            <label>Locatie</label>
+            <select id="locatie">
+              <option>DGO Broekstraat</option>
+              <option>GOO De Roskam</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Datum incident</label>
+            <input type="date" id="datum">
+          </div>
+          <div class="form-group">
+            <label>Incident Type</label>
+            <select id="type">
+              <option>Niet naleven huisregels</option>
+              <option>Schoonmaak niet uitgevoerd</option>
+              <option>Agressie</option>
+              <option>Overige</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fase</label>
+            <select id="fase">
+              <option>Fase 1: Geregistreerd</option>
+              <option>Fase 2: Scenario A</option>
+              <option>Fase 2: Scenario B</option>
+              <option>Fase 3: In behandeling</option>
+              <option>Klaar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ROV Vervaldatum</label>
+            <input type="date" id="rovvervaldatum">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Omschrijving</label>
+          <textarea id="omschrijving" placeholder="Wat is er gebeurd?"></textarea>
+        </div>
+        <button type="submit" class="btn">✓ Incident opslaan</button>
+      </form>
+    </div>
+
+    <!-- LIST TAB -->
+    <div id="list" class="tab-content">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Zoek op V-nummer of naam..." onkeyup="filterIncidents()">
+      </div>
+      <div id="incidents-list"></div>
+    </div>
+  </div>
+
+  <script>
+    // Load incidents from localStorage
+    let incidents = JSON.parse(localStorage.getItem('incidenten_dgo') || '[]');
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+      
+      if (tab === 'list') {
+        renderList();
+      }
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      
+      const vnummer = document.getElementById('vnummer').value.trim();
+      const naam = document.getElementById('naam').value.trim();
+      
+      if (!vnummer || !naam) {
+        alert('V-nummer en naam zijn verplicht!');
+        return;
+      }
+
+      const incident = {
+        id: Date.now(),
+        vnummer: document.getElementById('vnummer').value,
+        naam: document.getElementById('naam').value,
+        kamer: document.getElementById('kamer').value,
+        locatie: document.getElementById('locatie').value,
+        datum: document.getElementById('datum').value,
+        type: document.getElementById('type').value,
+        fase: document.getElementById('fase').value,
+        rovvervaldatum: document.getElementById('rovvervaldatum').value,
+        omschrijving: document.getElementById('omschrijving').value,
+        created: new Date().toLocaleDateString('nl-NL')
+      };
+
+      incidents.unshift(incident);
+      localStorage.setItem('incidenten_dgo', JSON.stringify(incidents));
+      
+      document.getElementById('count').textContent = incidents.length + ' incident' + (incidents.length !== 1 ? 'en' : '');
+      
+      e.target.reset();
+      alert('✓ Incident opgeslagen! Ga naar "Overzicht" om het te zien.');
+      switchTab('list');
+    }
+
+    function renderList() {
+      const list = document.getElementById('incidents-list');
+      const search = document.getElementById('search').value.toLowerCase();
+      const filtered = incidents.filter(inc => 
+        inc.vnummer.toLowerCase().includes(search) || 
+        inc.naam.toLowerCase().includes(search)
+      );
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Geen incidenten gevonden</p></div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(inc => `
+        <div class="incident-card">
+          <div>
+            <div class="incident-header">
+              <span class="badge">${inc.vnummer}</span>
+              <span class="incident-title">${inc.naam}</span>
+              <span class="incident-room">${inc.kamer}</span>
+            </div>
+            ${inc.omschrijving ? `<p class="incident-desc">${inc.omschrijving}</p>` : ''}
+            <div class="incident-meta">
+              <span>${inc.type}</span>
+              <span>•</span>
+              <span>${inc.fase}</span>
+              <span>•</span>
+              <span>${inc.locatie}</span>
+              ${inc.rovvervaldatum ? `<span>•</span><span>ROV vervalt: ${inc.rovvervaldatum}</span>` : ''}
+            </div>
+          </div>
+          <button class="btn btn-danger" onclick="deleteIncident(${inc.id})">🗑️ Verwijder</button>
+        </div>
+      `).join('');
+    }
+
+    function filterIncidents() {
+      renderList();
+    }
+
+    function deleteIncident(id) {
+      if (confirm('Dit incident verwijderen?')) {
+        incidents = incidents.filter(inc => inc.id !== id);
+        localStorage.setItem('incidenten_dgo', JSON.stringify(incidents));
+        document.getElementById('count').textContent = incidents.length + ' incident' + (incidents.length !== 1 ? 'en' : '');
+        renderList();
+      }
+    }
+
+    // Initial count
+    document.getElementById('count').textContent = incidents.length + ' incident' + (incidents.length !== 1 ? 'en' : '');
+  </script>
+</body>
+</html>
